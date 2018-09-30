@@ -11,4 +11,4 @@ def test_verify_unique_rows(df):
 def verify_train_test_split(train_ids,test_ids):
     '''
     '''
-    assert len(set(train_ids).intersection(test_ids))==0
+    assert len(set(train_ids).intersection(set(test_ids)))==0
