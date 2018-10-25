@@ -6,17 +6,19 @@ from sklearn.metrics import precision_recall_curve
 
 def gen_train_test_ids(df,idCol,seed=122,trainPercent=.8):
     '''
+    Randomly assigns PWSIDs to train/test.
+        
     Parameters
     ----------
     df : A Pandas data frame
     idCol : String with name of column that uniquely identifies each water district
-    seed :
+    seed : Integer, for reproducibility
     trainPercent : The percent of IDs in df to include in the training set
     
     Returns
     ----------
-    train_ids :
-    test_ids :
+    train_ids : PWSIDs of training set
+    test_ids : PWSIDs of test set
     '''
     
     ids = set(df[idCol]).intersection(set(df[idCol]))
@@ -37,11 +39,11 @@ def generate_cv_folds(trainDF,trainIDs,trainIDCol,seed=122):
     trainDF : A Pandas data frame
     trainIDs : A list with strings identifying rows in the train set
     trainIDCol : A string with the name of the column identifying rows in training set
-    seed :
+    seed : Integer, for reproducibility
     
     Returns
     ----------
-    trainDF :
+    trainDF : 
     '''
     trainGroup = pd.DataFrame({trainIDCol:trainIDs})
     np.random.seed(seed)

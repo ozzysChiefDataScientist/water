@@ -24,6 +24,10 @@ def compare_correct_incorrect_values(df,predictor):
     ----------
     df : A Pandas data frame
     predictors : A string with name of predictor variable column
+    
+    Returns
+    ----------
+    df: A data frame with the following columns: index (notes the measurement); gpcd_from_water_deliv_residential_revised_units_in_orig_units_in_gallons_incorrect (value of metric specified in index on incorrect reports); gpcd_from_water_deliv_residential_revised_units_in_orig_units_in_gallons_correct (value of metric specified in index on correct reports)
     '''
     incorrectValues = df[(pd.isnull(df[predictor])==False)
                   & (df['original_units_incorrect']==1)][predictor].describe(percentiles=[0.05,0.1,0.5,0.9,0.95]).reset_index()
@@ -33,6 +37,18 @@ def compare_correct_incorrect_values(df,predictor):
     return compare
 
 def generate_shap_df(shap_values,xgb_train_X):
+    '''
+    The shap.summary_plot() function shows all variables in a model. This function returns the raw values displayed in the shap.summary_plot() plot for users who need to explore a specific variable more closely.
+        
+    Parameters
+    ----------
+    shap_values : Shap values created from shap.TreeExplainer.shap_values(X) on a dataset X
+    xgb_train_X : The training data set, in matrix form
+    
+    Returns
+    ----------
+    shapDF: A dataframe with the values plotted in shap.summary_plot()
+    '''
     shapDF = pd.DataFrame()
     max_display = 7
     row_height = 0.4
@@ -40,7 +56,7 @@ def generate_shap_df(shap_values,xgb_train_X):
     feature_order = feature_order[-min(max_display, len(feature_order)):]
     features = xgb_train_X
     
-
+    # Lines 60-100 from https://github.com/slundberg/shap/blob/master/shap/plots/summary.py#L187-L248
     for pos, i in enumerate(feature_order):
         shaps = shap_values[:, i]
         values = None if features is None else features[:, i]
@@ -82,6 +98,7 @@ def generate_shap_df(shap_values,xgb_train_X):
         
             assert features.shape[0] == len(shaps), "Feature and SHAP matrices must have the same number of rows!"
         nan_mask = np.isnan(values)
+        
         if shapDF.shape[0]==0:
             shapDF = pd.DataFrame({"shap":shaps[np.invert(nan_mask)],
                                   "ys":ys[np.invert(nan_mask)],
