@@ -10,5 +10,11 @@ def test_verify_unique_rows(df):
 
 def verify_train_test_split(train_ids,test_ids):
     '''
+    Confirms that PWSIDs are distinct between the training and test set
+    
+    Parameters
+    ----------
+    train_ids : List or series of PWSID in training set
+    test_ids : List or series of PWSID in training set
     '''
     assert len(set(train_ids).intersection(set(test_ids)))==0

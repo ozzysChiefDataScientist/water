@@ -43,7 +43,7 @@ def generate_cv_folds(trainDF,trainIDs,trainIDCol,seed=122):
     
     Returns
     ----------
-    trainDF : 
+    trainDF : trainDF with a column random_group. PWSIDs are randomly assigned into 5 random_group buckets; these buckets are used as cross-validation folds.
     '''
     trainGroup = pd.DataFrame({trainIDCol:trainIDs})
     np.random.seed(seed)
@@ -58,6 +58,8 @@ def generate_cv_folds(trainDF,trainIDs,trainIDCol,seed=122):
 
 def generate_train_test_df_and_matrix(df,idCol,trainIDs,testIDs,predictors,responseCol):
     '''
+    Splits the data set into train and test; returns as both matrix ready for XGBoost and as Pandas data frame
+        
     Parameters
     ----------
     df : A Pandas data frame
@@ -69,12 +71,12 @@ def generate_train_test_df_and_matrix(df,idCol,trainIDs,testIDs,predictors,respo
     
     Returns
     ----------
-    train_X :
-    test_X :
-    xgb_train_X :
-    xgb_test_X :
-    xgb_train_y :
-    xgb_test_y :
+    train_X : A Pandas data frame of observations in the training set
+    test_X : A Pandas data frame of observations in the test set
+    xgb_train_X : A matrix version of train_X, limited to predictive variable columns
+    xgb_test_X : A matrix version of test_X, limited to predictive variable columns
+    xgb_train_y : A Pandas series of the response in train_X
+    xgb_test_y : A Pandas series of the response in test_X
     '''
     train_X = df[df[idCol].isin(trainIDs)]
     test_X = df[df[idCol].isin(testIDs)]
@@ -89,6 +91,8 @@ def generate_train_test_df_and_matrix(df,idCol,trainIDs,testIDs,predictors,respo
 
 def review_train_test_split(train,test,responseCol):
     '''
+    Describes the train and test sets
+        
     Parameters
     ----------
     train : A Pandas data frame
@@ -106,20 +110,27 @@ def review_train_test_split(train,test,responseCol):
 
 def gridsearch_best_precision_and_recall(gbm,parameters,gss,trainDF,wholeDF,trainIDs,responseCol,xgb_train_X,xgb_test_X,xgb_train_y,xgb_test_y):
     '''
+    Performs grid search to test for best parameters. Tests for precision, then for recall.
+        
     Parameters
     ----------
-    gbm :
-    parameters :
-    gss :
-    trainDF :
-    wholeDF :
+    gbm : XGBClassifier object
+    parameters : a dictionary specifying hyperparameters to tune
+    gss : A GroupShuffleSplit object
+    trainDF : A Pandas data frame with the training set
+    wholeDF : A Pandas data frame with the train and test sets
     trainIDs : A list with strings identifying rows in the train set
     responseCol : A string with the name of the response variable column
-    xgb_train_X :
-    xgb_test_X :
-    xgb_train_y :
-    xgb_test_y :
+    xgb_train_X : A matrix version of trainDF, limited to predictive variable columns
+    xgb_test_X : A matrix version of the test set, limited to predictive variable columns
+    xgb_train_y : A Pandas series of the response in trainDF
+    xgb_test_y : A Pandas series of the response in the test set
     '''
+    
+    # Lines 142-143 adapted from sklearn
+    # Lines 136-141, Lines 144-162 from sklearn
+    # Link: https://github.com/scikit-learn/scikit-learn/blob/master/examples/model_selection/plot_grid_search_digits.py#L47-L77
+    # Retrieval Date: 9/25/18
     scores = ['precision', 'recall']
 
     grid_search_results = []
@@ -154,6 +165,21 @@ def gridsearch_best_precision_and_recall(gbm,parameters,gss,trainDF,wholeDF,trai
     return grid_search_results
 
 def get_precision_recall(gbm,y,X,beta=1):
+    '''
+    Assesses precision, recall, and f1 score at various thresholds.
+    
+    Parameters
+    ----------
+    gbm : A fitted XGBoost model
+    y : A Pandas series of the response
+    X : A matrix of the predictor variables
+    beta : Beta determines the weight of precision in the f1 score. Beta > 1 gives more weight to recall. Precision and recall are weighted equally when beta=1.
+    
+    Returns
+    ----------
+    precisionRecallDF : A data frame summarizing precision, recall,  f1 score with beta=1, and f1 score at specified beta at various thresholds.
+    
+    '''
     precision, recall, thresholds = precision_recall_curve( y,  list(pd.DataFrame(gbm.predict_proba(X))[1]))
     thresholds = [0,] + list(thresholds)
     precisionRecallDF = pd.DataFrame({"precision":precision,"recall":recall,"threshold":thresholds})
